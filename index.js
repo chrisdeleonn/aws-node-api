@@ -21,10 +21,10 @@ mongoose
 const UserSchema = mongoose.Schema({
     fname: { type: String, required: true },
     lname: { type: String, required: true },
-    lname: { type: String, required: true },
+    email: { type: String, required: true },
     password: { type: String, required: true },
 },
-{ timestamp: true }
+{ timestamps: true }
 )
 
 const UsersModel = mongoose.model('Users', UserSchema)
@@ -39,13 +39,28 @@ app.post('/users', (req, res) => {
     console.log('req body', req.body)
     new UsersModel(req.body)
     .save()
-    .then(() => res.status(200).send('user has been created'))
-    .catch(err => console.log(err))
+    .then(() => { 
+        UsersModel.findOne({email: req.body.email})
+        .then(foundUser => res.send(foundUser))
+})
+.catch(err => console.log(err))
+    
 })
 
 app.post('/login', (req, res) => {
-    UsersModel.findOne({email: req.body.email})
-    .then(userFound => res.status(200).send(userFound))
-    .catch(err => console.log(err))
-})
-
+    UsersModel.findOne({ email: req.body.email })
+      .then(userFound => {
+        console.log(userFound)
+        if (!userFound) {
+          return res.status(404).send('User Not found')
+        }
+  
+        if (userFound && userFound.password === req.body.password) {
+          res.status(200).send('user is good to go')
+        } else {
+          res.status(404).send('User not authenticated')
+        }
+      })
+  
+      .catch(err => console.log(err))
+  })
